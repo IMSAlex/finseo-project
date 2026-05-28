@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рейтинг ОФЗ по доходности к погашению на сегодня</title>
+    <meta name="description" content="Актуальная таблица облигаций федерального займа (ОФЗ) Мосбиржи. Сортировка по реальной доходности к погашению (YTM).">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f9; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        h1 { font-size: 24px; color: #111; margin-bottom: 5px; }
+        .update-time { color: #666; font-size: 14px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #e0e0e0; }
+        th { background-color: #f8f9fa; font-weight: 600; color: #555; }
+        tr:hover { background-color: #fdfdfd; }
+        .badge-yield { background-color: #e6f4ea; color: #137333; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+        .btn-buy { display: inline-block; background-color: #007bff; color: #fff; padding: 6px 12px; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 500; }
+        .btn-buy:hover { background-color: #0056b3; }
+        @media (max-width: 768px) { 
+            table, thead, tbody, th, td, tr { display: block; }
+            thead tr { position: absolute; top: -9999px; left: -9999px; }
+            tr { border: 1px solid #ccc; margin-bottom: 10px; border-radius: 8px; padding: 10px; background: #fff; }
+            td { border: none; border-bottom: 1px solid #eee; position: relative; padding-left: 50%; text-align: right; }
+            td:before { position: absolute; top: 12px; left: 15px; width: 45%; padding-right: 10px; white-space: nowrap; text-align: left; font-weight: bold; }
+            td:nth-of-type(1):before { content: "Код"; }
+            td:nth-of-type(2):before { content: "Название"; }
+            td:nth-of-type(3):before { content: "Цена"; }
+            td:nth-of-type(4):before { content: "Доходность YTM"; }
+            td:nth-of-type(5):before { content: "Купон в год"; }
+            td:nth-of-type(6):before { content: "Действие"; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📈 ОФЗ с максимальной доходностью к погашению</h1>
+    <div class="update-time">Данные обновлены автоматически из ISS MOEX: <strong>{{ current_date }}</strong></div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Код</th>
+                <th>Название</th>
+                <th>Цена, %</th>
+                <th>Доходность YTM</th>
+                <th>Купон руб/год</th>
+                <th>Купить</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in bonds %}
+            <tr>
+                <td>{{ row['Код'] }}</td>
+                <td><strong>{{ row['Название'] }}</strong></td>
+                <td>{{ row['Цена'] }}%</td>
+                <td><span class="badge-yield">{{ row['Доходность'] }}%</span></td>
+                <td>{{ row['Купон_год'] }} ₽</td>
+                <td><a href="https://tinkoff.ru{{ row['Код'] }}" class="btn-buy" target="_blank" rel="nofollow">Купить</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>
