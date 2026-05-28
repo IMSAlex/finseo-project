@@ -5,63 +5,76 @@ import requests
 
 
 def run_business_logic():
-    print("Шаг 1: Запрос данных ОФЗ из зеркала...")
+    print("Шаг 1: Запрос открытого финансового фида...")
 
-    url = "https://githubusercontent.com"
+    # Стабильный, открытый источник данных по облигациям РФ
+    url = "https://rusetf.com"
 
     try:
-        response = requests.get(url, timeout=15)
+        response = requests.get(url, timeout=20)
         if response.status_code != 200:
-            print("Зеркало временно недоступно.")
+            print(f"Фид недоступен. Статус: {response.status_code}")
             return
-        raw_bonds = response.json()
+        raw_data = response.json()
     except Exception as e:
-        print(f"Ошибка получения данных: {e}")
+        print(f"Сетевая ошибка: {e}")
         return
 
-    # Превращаем в Pandas
-    df = pd.DataFrame(raw_bonds)
+    print("Шаг 2: Фильтрация и расчет ОФЗ...")
 
-    print("Шаг 2: Адаптивная фильтрация ОФЗ по ключевому слову...")
+    # Фид возвращает список словарей. Переводим в Pandas
+    df = pd.DataFrame(raw_data)
 
-    # Приводим все текстовые колонки к нижнему регистру для безопасного поиска
+    # Фильтруем только государственные облигации (ОФЗ)
+    # Обычно в фидах они маркируются типом 'gov' или по слову в названии
     df["name_lower"] = df["name"].astype(str).str.lower()
+    df_ofz = df[
+        df["name_lower"].str.contains("офз", na=False)
+        | (df["type"] == "gov")
+    ].copy()
 
-    # Фильтруем: берем только те строки, где в названии есть "офз"
-    df_ofz = df[df["name_lower"].str.contains("офз", na=False)].copy()
+    # Дропаем строки, где нет ключевых параметров
+    df_ofz = df_ofz.dropna(subset=["price", "yield_to_maturity"])
 
-    # Заменяем возможные пропуски в цене и доходности на нули, чтобы не падать
-    df_ofz["yield"] = pd.to_numeric(df_ofz["yield"], errors="coerce").fillna(0)
-    df_ofz["price"] = pd.to_numeric(df_ofz["price"], errors="coerce").fillna(0)
-
-    # Сортируем по доходности к погашению (YTM) от максимума к минимуму
-    df_ofz = df_ofz.sort_values(by="yield", ascending=False)
-
-    # Формируем список данных для нашего шаблона template.html
     bonds_list = []
     for _, row in df_ofz.iterrows():
-        # Расчет купона за год: если параметров нет, ставим 0
-        coupon_value = row.get("coupon_value", 0)
-        coupon_period = row.get("coupon_period", 182)
+        # Вытаскиваем значения, страхуясь от пустых ячеек
+        ytm = float(row.get("yield_to_maturity", 0))
+        price = float(row.get("price", 0))
+        coupon_value = float(row.get("coupon_value", 0))
+        coupon_period = int(row.get("coupon_period", 182))
 
-        if coupon_period > 0 and coupon_value > 0:
-            coupon_year = round(coupon_value * (365 / coupon_period), 2)
-        else:
-            coupon_year = 0
+        if ytm <= 0 or price <= 0:
+            continue
+
+        # Считаем годовой купон в рублях
+        coupon_year = (
+            round(coupon_value * (365 / coupon_period), 2)
+            if coupon_period > 0
+            else 0
+        )
 
         bonds_list.append(
             {
-                "Код": row.get("secid", "-"),
+                "Код": row.get("ticker", row.get("secid", "-")),
                 "Название": row.get("name", "-"),
-                "Цена": round(row.get("price", 0), 2),
-                "Доходность": round(row.get("yield", 0), 2),
-                "Купон_год": coupon_year,
+                "Цена": round(price, 2),
+                "Доходность": round(ytm, 2),
+                "Купон_god": coupon_year,
             }
         )
 
-    print(f"Успешно обработано {len(bonds_list)} облигаций ОФЗ.")
+    # Сортируем: максимальная доходность YTM строго наверх
+    bonds_list = sorted(bonds_list, key=lambda x: x["Доходность"], reverse=True)
+    print(f"Успешно подготовлено {len(bonds_list)} ОФЗ для сайта.")
 
-    print("Шаг 3: Генерация index.html...")
+    if not bonds_list:
+        print(
+            "Внимание: список ОФЗ пуст. Проверьте структуру альтернативного источника."
+        )
+        return
+
+    print("Шаг 3: Сборка index.html...")
     current_date = datetime.now().strftime("%d.%m.%Y в %H:%M")
 
     with open("template.html", "r", encoding="utf-8") as f:
@@ -74,7 +87,7 @@ def run_business_logic():
 
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(rendered_html)
-    print("Успех! Файл index.html заполнен данными.")
+    print("Успех! Файл index.html обновлен данными.")
 
 
 if __name__ == "__main__":
