@@ -2,9 +2,8 @@ name: Auto Update FinSEO Site
 
 on:
   schedule:
-    # Запуск каждый день в 19:05 МСК (16:05 UTC) после закрытия торгов на Мосбирже
     - cron: '5 16 * * *'
-  workflow_dispatch: # Позволяет запускать сборку вручную кнопкой в интерфейсе
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -13,7 +12,7 @@ jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
     steps:
-    - name: Проверяем код репозитория
+    - name: Проверяем код
       uses: actions/checkout@v4
 
     - name: Устанавливаем Python
@@ -21,18 +20,16 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Устанавливаем библиотеки
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+    - name: Библиотеки
+      run: pip install pandas requests jinja2
 
-    - name: Запуск нашего робота-парсера
+    - name: Запуск робота
       run: python run_finseo.py
 
-    - name: Авто-коммит обновленного index.html обратно в репозиторий
+    - name: Деплой
       run: |
         git config --global user.name "FinSeoBot"
         git config --global user.email "bot@finseo.ru"
         git add index.html
-        git commit -m "Автоматическое обновление данных ОФЗ" || echo "Нет изменений для коммита"
+        git commit -m "Авто-обновление ОФЗ" || echo "Изменений нет"
         git push
