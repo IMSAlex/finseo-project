@@ -1,0 +1,5 @@
+[
+  {"secid": "SU26238RMFS4", "name": "ОФЗ 26238", "price": 62.40, "yield": 18.45, "coupon_value": 35.40, "coupon_period": 182, "type": "ofz"},
+  {"secid": "SU26233RMFS5", "name": "ОФЗ 26233", "price": 64.15, "yield": 18.12, "coupon_value": 30.90, "coupon_period": 182, "type": "ofz"},
+  {"secid": "SU26243RMFS4", "name": "ОФЗ 26243", "price": 71.20, "yield": 17.60, "coupon_value": 48.60, "coupon_period": 182, "type": "ofz"}
+]
